@@ -1,0 +1,163 @@
+---
+title: "Project 1"
+author: "Sadia Perveen"
+date: "9/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install necessary packages. 
+stringr for splitting and tidyr for splitting columns 
+
+```{r, warning = FALSE, results = FALSE}
+install.packages("stringr", repos = "http://cran.us.r-project.org")
+install.packages("tidyr", repos = "http://cran.us.r-project.org")
+require(stringr)
+require(tidyr)
+```
+
+Read file into rawData data frame and name column as Info.   
+```{r, warning = FALSE}
+file <- "https://raw.githubusercontent.com/sadia-perveen/Project-1-DATA607/master/tournamentinfo.txt"
+rawData <- read.delim(file)
+names(rawData) <- c("Info")
+head(rawData) 
+```
+
+
+Convert rawData data frame into a single string value and save it to rawData value.
+```{r, warning = FALSE}
+rawData <- paste(rawData$Info, collapse = "")
+```
+
+Then, split rawData string between the dashes and save it into playerData data frame. And set column name to AllPlayerData. 
+Splitting between the dashes creates a seperate row for each players data. 
+```{r, warning = FALSE}
+playerData <- data.frame(str_split(rawData, "\\-{2,}"))
+names(playerData) <- c("AllPlayerData")
+head(playerData$AllPlayerData)
+```
+
+Seperating data into columns based on apparent patterns for each row in PlayerData data frame and storing it into PlayerDataFrame. Then furthermore seperating PlayerDataFrame columns into multiple columns basked on apparent patterns. 
+
+```{r, warning = FALSE}
+playerDataFrame <- playerData %>% separate(AllPlayerData, c("PlayerNum", "PlayerName", "TotalPts", "Round1", "Round2", "Round3" , "Round4", "Round5", "Round6", "Round7", "State", "UscfInfo"), sep = "\\|")
+playerDataFrame <- playerDataFrame %>% separate(UscfInfo, c("UscfId","regInfo"), sep = "\\/")
+playerDataFrame <- playerDataFrame %>% separate(regInfo, c("Pre","Post"), sep = "\\->")
+playerDataFrame <- playerDataFrame %>% separate(Round1, c("Round1Status","Round1Opponent"), sep = "\\  ")
+playerDataFrame <- playerDataFrame %>% separate(Round2, c("Round2Status","Round2Opponent"), sep = "\\  ")
+playerDataFrame <- playerDataFrame %>% separate(Round3, c("Round3Status","Round3Opponent"), sep = "\\  ")
+playerDataFrame <- playerDataFrame %>% separate(Round4, c("Round4Status","Round4Opponent"), sep = "\\  ")
+playerDataFrame <- playerDataFrame %>% separate(Round5, c("Round5Status","Round5Opponent"), sep = "\\  ")
+playerDataFrame <- playerDataFrame %>% separate(Round6, c("Round6Status","Round6Opponent"), sep = "\\  ")
+playerDataFrame <- playerDataFrame %>% separate(Round7, c("Round7Status","Round7Opponent"), sep = "\\  ")
+head(playerDataFrame)
+```
+
+Removing the header row and ending empty row.
+```{r, warning = FALSE}
+playerDataFrame <- playerDataFrame[-1, ]
+playerDataFrame <- playerDataFrame[-nrow(playerDataFrame),]
+head(playerDataFrame)
+```
+
+seperate out only the digits in playerDataFrame$Pre value using str_extract and pattern matching with '\\d{1,}'. str_extract gets the first digit only value found with the pattern of atleast 1 digit. 
+
+```{r, warning = FALSE}
+playerDataFrame$Pre <- str_extract(playerDataFrame$Pre, '\\d{1,}')
+```
+
+Trim out any trailing or leading spaces in playerDataFrame$PlayerNum value to allow matching to player's round opponents, also trim out trailing and leading spacing in all the opponent values.  
+
+```{r, warning = FALSE}
+playerDataFrame$PlayerNum <- trimws(playerDataFrame$PlayerNum)
+playerDataFrame$Round1Opponent <- trimws(playerDataFrame$Round1Opponent)
+playerDataFrame$Round2Opponent <- trimws(playerDataFrame$Round2Opponent)
+playerDataFrame$Round3Opponent <- trimws(playerDataFrame$Round3Opponent)
+playerDataFrame$Round4Opponent <- trimws(playerDataFrame$Round4Opponent)
+playerDataFrame$Round5Opponent <- trimws(playerDataFrame$Round5Opponent)
+playerDataFrame$Round6Opponent <- trimws(playerDataFrame$Round6Opponent)
+playerDataFrame$Round7Opponent <- trimws(playerDataFrame$Round7Opponent)
+```
+
+
+Add a varaible AvgRating to PlayerDataFrame to store the value that will be generated.
+```{r, warning = FALSE}
+playerDataFrame$AvgRating <- 0
+```
+Use a for loop to go through the data frame and pull all opponent ids for each player.
+Pull the Pre Chess rating for the found opponents and use a counter to keep track of all found opponents.
+Use a counter to store the sum of all found opponents Pre Chess Rating.
+Finally, calculte the avergae by dividing the sum by the total found opponents and store value in AvgRating value of PlayerDataFrame.
+
+```{r, warning = FALSE}
+for (index in 1:nrow(playerDataFrame)){
+  #roundCount value stores all found opponents for the current player.
+  roundCount <- 0;
+  #currTotal value stores the calcuated value of all found opponent's Pre Chess Rating.
+  currTotal <- 0;
+  #get all opponent rows for current player for all rounds.
+  opponent1 <- playerDataFrame[index, "Round1Opponent"]
+  opponent2 <- playerDataFrame[index, "Round2Opponent"]
+  opponent3 <- playerDataFrame[index, "Round3Opponent"]
+  opponent4 <- playerDataFrame[index, "Round4Opponent"]
+  opponent5 <- playerDataFrame[index, "Round5Opponent"]
+  opponent6 <- playerDataFrame[index, "Round6Opponent"]
+  opponent7 <- playerDataFrame[index, "Round7Opponent"]
+  
+  #if opponent is found (!= "") then get the pre chess rating of opponent, increment roundCount and add pre chess rating to currTotal.
+  if(opponent1 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent1),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  if(opponent2 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent2),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  if(opponent3 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent3),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  if(opponent4 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent4),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  if(opponent5 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent5),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  if(opponent6 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent6),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  if(opponent7 != ""){
+    get <- as.integer(playerDataFrame[which(playerDataFrame$PlayerNum == opponent7),]$Pre)
+    roundCount <- roundCount + 1
+    currTotal = currTotal + get
+  }
+  #get the average chess rating for current player and store in AvgRating variable.
+  playerDataFrame[index, "AvgRating"] <- trunc(currTotal/roundCount)
+  
+}
+
+head(playerDataFrame)
+```
+
+Write required variables (columns) to csv file.
+
+```{r, warning = FALSE}
+
+playerDataFrame[,c("PlayerName", "State", "TotalPts", "Pre", "AvgRating")]
+write.csv(playerDataFrame[,c("PlayerName", "State", "TotalPts", "Pre", "AvgRating")], file="chessOutputFile.csv", row.names=FALSE)
+
+```
+
